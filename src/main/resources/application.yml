@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: swyp-invite-be
+  profiles:
+    default: local # 배포 환경에서는 SPRING_PROFILES_ACTIVE=prod
+  jpa:
+    open-in-view: false
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  jpa:
+    hibernate:
+      ddl-auto: update
