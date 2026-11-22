@@ -13,6 +13,17 @@ Java 21, Spring Boot 4, MySQL 8.4, Swagger(springdoc)
 - MySQL 컨테이너는 `compose.yaml`로 자동 기동되고 접속 정보도 자동으로 주입된다.
 - Swagger UI: http://localhost:8080/swagger-ui/index.html
 
+### Docker로 서버까지 띄우기
+
+JDK 없이 Docker만으로 서버와 MySQL을 함께 띄운다. 로컬 실행용이며 배포 방식은 아직 정하지 않았다.
+
+```bash
+docker compose --profile app up --build
+```
+
+- 끝낼 때는 `Ctrl+C` 또는 `docker compose --profile app stop`. `down`은 MySQL 컨테이너까지 지워 로컬 DB 데이터가 사라진다.
+- `./gradlew bootRun`과 같은 8080 포트를 쓰므로 둘을 동시에 띄울 수 없다.
+
 ## 빌드와 테스트
 
 ```bash
