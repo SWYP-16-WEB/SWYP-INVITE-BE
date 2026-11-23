@@ -31,6 +31,12 @@ com.swyp.invite
 - enum에는 `@Enumerated(EnumType.STRING)`과 `@JdbcTypeCode(SqlTypes.VARCHAR)`를 함께 붙인다.
 - 개인정보 컬럼에는 `@Convert(converter = PiiEncryptionConverter.class)`를 붙인다.
 
+## 에러 응답
+
+- 실패는 `ApiException(ErrorCode)`를 던져 알린다. 응답은 `global.error.GlobalExceptionHandler` 한 곳에서 `{ "code", "message", "errors" }` 모양으로 만든다.
+- 입력값은 요청 DTO에 Bean Validation을 붙이고 컨트롤러 파라미터에 `@Valid`를 붙여 검사한다. 걸린 필드는 `errors`에 담겨 나간다. 그 밖의 실패에서는 `errors`가 빈 배열이다.
+- 에러 코드와 HTTP 상태의 기준은 `docs/backend.md` 05절의 에러 코드 표다. 표를 먼저 고치고 `ErrorCode`를 맞춘다. 표와 다르면 `ErrorCodeTest`가 실패한다.
+
 ## DB 스키마
 
 - 테이블은 `src/main/resources/db/migration`의 Flyway SQL로만 바꾼다. 엔티티는 서버가 뜰 때 검사만 받는다(`ddl-auto: validate`).
