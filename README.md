@@ -33,6 +33,14 @@ docker compose --profile app up --build
 - 끝낼 때는 `Ctrl+C` 또는 `docker compose --profile app stop`. `down`은 MySQL 컨테이너까지 지워 로컬 DB 데이터가 사라진다.
 - `./gradlew bootRun`과 같은 8080 포트를 쓰므로 둘을 동시에 띄울 수 없다.
 
+### 로컬 DB 초기화
+
+테이블은 서버가 뜰 때 Flyway가 `src/main/resources/db/migration`의 SQL로 만든다. 출시 전에는 `V1__init.sql`을 고칠 수 있는데, 이미 적용한 로컬 DB에서는 내용이 바뀐 것을 알아채고 서버가 뜨지 않는다. 그때는 로컬 DB를 지우고 다시 띄운다. 로컬 데이터는 사라진다.
+
+```bash
+docker compose --profile app down
+```
+
 ## 빌드와 테스트
 
 ```bash

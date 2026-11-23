@@ -7,11 +7,5 @@ spring:
     import: optional:file:.env[.properties]
   jpa:
     open-in-view: false
----
-spring:
-  config:
-    activate:
-      on-profile: local
-  jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
