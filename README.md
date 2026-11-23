@@ -64,3 +64,4 @@ PII_ENCRYPTION_KEY=
 ## 문서
 
 - [Git 컨벤션](docs/git-convention.md)
+- [코드 구조](docs/architecture.md)
