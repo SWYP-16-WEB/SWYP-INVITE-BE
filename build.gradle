@@ -42,6 +42,7 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	inputs.file('docs/backend.md')
 	environment 'PII_ENCRYPTION_KEY', Base64.encoder.encodeToString(new byte[32])
 	systemProperty 'user.timezone', 'Asia/Seoul'
 }

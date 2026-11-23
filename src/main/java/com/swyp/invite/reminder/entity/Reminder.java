@@ -36,11 +36,14 @@ public class Reminder {
 
 	private LocalDateTime remindAt;
 
+	private String title;
+
 	private String message;
 
-	public Reminder(Event event, LocalDateTime remindAt, String message) {
+	public Reminder(Event event, LocalDateTime remindAt, String title, String message) {
 		this.event = event;
 		this.remindAt = remindAt;
+		this.title = title;
 		this.message = message;
 	}
 

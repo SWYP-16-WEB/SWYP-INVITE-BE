@@ -73,6 +73,8 @@ public class Event {
 	@UpdateTimestamp
 	private LocalDateTime updatedAt;
 
+	private LocalDateTime editedAt;
+
 	@Builder
 	private Event(User hostUser, String hostCodeHash, String shareCode, EventType eventType, String eventTypeCustom,
 			String title, LocalDateTime eventAt, String place, LocalDate rsvpDeadline, String photoUrl,

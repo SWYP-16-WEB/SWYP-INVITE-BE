@@ -34,6 +34,6 @@ com.swyp.invite
 ## DB 스키마
 
 - 테이블은 `src/main/resources/db/migration`의 Flyway SQL로만 바꾼다. 엔티티는 서버가 뜰 때 검사만 받는다(`ddl-auto: validate`).
-- 컬럼의 기준은 `docs/backend.md` 04절의 테이블 표다. 표를 먼저 고치고 SQL과 엔티티를 맞춘다.
+- 컬럼의 기준은 `docs/backend.md` 04절의 테이블 표다. 표를 먼저 고치고 SQL과 엔티티를 맞춘다. 표의 컬럼 이름과 실제 컬럼이 다르면 `SchemaTest`가 실패한다.
 - 출시 전에는 `V1__init.sql`을 고친다. 고친 뒤에는 로컬 DB를 지우고 다시 띄운다(README의 「로컬 DB 초기화」).
 - 검사가 잡지 못하는 필수, 유니크, 길이, 연쇄 삭제는 `EntityMappingTest`처럼 실제 스키마를 상대로 테스트한다.
