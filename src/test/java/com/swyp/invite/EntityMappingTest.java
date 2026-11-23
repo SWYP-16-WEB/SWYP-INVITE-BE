@@ -34,7 +34,7 @@ class EntityMappingTest {
 	@Test
 	void 저장하고_다시_읽으면_값이_같다() {
 		User user = persist(new User("kakao-1", "닉네임"));
-		Event event = persist(event("share-1").hostUser(user).rsvpDeadline(LocalDate.of(2026, 12, 20)).build());
+		Event event = persist(memberEvent(user, "share-1").rsvpDeadline(LocalDate.of(2026, 12, 20)).build());
 		ChecklistItem item = persist(new ChecklistItem(event, "케이크", true));
 		Rsvp rsvp = persist(new Rsvp(event, "게스트", Attendance.ATTENDING, "user1@example.com", ReminderStatus.PENDING));
 		em.flush();
@@ -65,7 +65,7 @@ class EntityMappingTest {
 
 	@Test
 	void enum은_이름으로_시각은_그대로_저장한다() {
-		Event event = persist(event("share-1").build());
+		Event event = persist(lightEvent("share-1").build());
 		Rsvp rsvp = persist(new Rsvp(event, "게스트", Attendance.DECLINED, null, null));
 		em.flush();
 
@@ -78,7 +78,7 @@ class EntityMappingTest {
 	@Test
 	void 회원을_지우면_이벤트와_응답과_체크리스트가_함께_지워진다() {
 		User user = persist(new User("kakao-1", "닉네임"));
-		Event event = persist(event("share-1").hostUser(user).build());
+		Event event = persist(memberEvent(user, "share-1").build());
 		persist(new ChecklistItem(event, "케이크", true));
 		persist(new Rsvp(event, "게스트", Attendance.ATTENDING, "user1@example.com", ReminderStatus.PENDING));
 		em.flush();
@@ -95,27 +95,45 @@ class EntityMappingTest {
 	@Test
 	void share_code가_비면_저장되지_않는다() {
 		assertThatThrownBy(() -> {
-			em.persist(event(null).build());
+			em.persist(lightEvent(null).build());
 			em.flush();
 		}).isInstanceOf(PersistenceException.class).hasStackTraceContaining("share_code");
 	}
 
 	@Test
 	void share_code가_겹치면_저장되지_않는다() {
-		persist(event("share-1").build());
+		persist(lightEvent("share-1").build());
 
 		assertThatThrownBy(() -> {
-			em.persist(event("share-1").build());
+			em.persist(lightEvent("share-1").hostCodeHash("hash-2").build());
 			em.flush();
 		}).isInstanceOf(PersistenceException.class).hasStackTraceContaining("uk_events_share_code");
 	}
 
 	@Test
-	void host_code_hash가_겹치면_저장되지_않는다() {
-		persist(event("share-1").hostCodeHash("hash-1").build());
+	void 호스트가_없으면_저장되지_않는다() {
+		assertThatThrownBy(() -> {
+			em.persist(event("share-1").build());
+			em.flush();
+		}).isInstanceOf(PersistenceException.class).hasStackTraceContaining("ck_events_one_host");
+	}
+
+	@Test
+	void 회원과_관리_코드가_둘_다_있으면_저장되지_않는다() {
+		User user = persist(new User("kakao-1", "닉네임"));
 
 		assertThatThrownBy(() -> {
-			em.persist(event("share-2").hostCodeHash("hash-1").build());
+			em.persist(memberEvent(user, "share-1").hostCodeHash("hash-1").build());
+			em.flush();
+		}).isInstanceOf(PersistenceException.class).hasStackTraceContaining("ck_events_one_host");
+	}
+
+	@Test
+	void host_code_hash가_겹치면_저장되지_않는다() {
+		persist(lightEvent("share-1").hostCodeHash("hash-1").build());
+
+		assertThatThrownBy(() -> {
+			em.persist(lightEvent("share-2").hostCodeHash("hash-1").build());
 			em.flush();
 		}).isInstanceOf(PersistenceException.class).hasStackTraceContaining("uk_events_host_code_hash");
 	}
@@ -132,7 +150,7 @@ class EntityMappingTest {
 
 	@Test
 	void 이메일과_정산_정보는_암호화해서_저장한다() {
-		Event event = persist(event("share-1").settlementInfo("가짜은행 000-000-000000").build());
+		Event event = persist(lightEvent("share-1").settlementInfo("가짜은행 000-000-000000").build());
 		Rsvp rsvp = persist(new Rsvp(event, "게스트", Attendance.ATTENDING, "user1@example.com", ReminderStatus.PENDING));
 		em.flush();
 		em.clear();
@@ -147,7 +165,7 @@ class EntityMappingTest {
 	@Test
 	void 원문_356바이트가_두_암호화_컬럼에_들어간다() {
 		String longest = "a".repeat(356);
-		Event event = persist(event("share-1").settlementInfo(longest).build());
+		Event event = persist(lightEvent("share-1").settlementInfo(longest).build());
 		Rsvp rsvp = persist(new Rsvp(event, "게스트", Attendance.ATTENDING, longest, ReminderStatus.PENDING));
 		em.flush();
 		em.clear();
@@ -162,6 +180,14 @@ class EntityMappingTest {
 	private <T> T persist(T entity) {
 		em.persist(entity);
 		return entity;
+	}
+
+	private Event.EventBuilder memberEvent(User user, String shareCode) {
+		return event(shareCode).hostUser(user);
+	}
+
+	private Event.EventBuilder lightEvent(String shareCode) {
+		return event(shareCode).hostCodeHash("hash-of-" + shareCode);
 	}
 
 	private Event.EventBuilder event(String shareCode) {

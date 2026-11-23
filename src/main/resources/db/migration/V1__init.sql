@@ -27,7 +27,8 @@ CREATE TABLE events (
     PRIMARY KEY (id),
     CONSTRAINT uk_events_host_code_hash UNIQUE (host_code_hash),
     CONSTRAINT uk_events_share_code UNIQUE (share_code),
-    CONSTRAINT fk_events_host_user_id FOREIGN KEY (host_user_id) REFERENCES users (id) ON DELETE CASCADE
+    CONSTRAINT fk_events_host_user_id FOREIGN KEY (host_user_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT ck_events_one_host CHECK ((host_user_id IS NULL) <> (host_code_hash IS NULL))
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 CREATE TABLE checklist_items (
