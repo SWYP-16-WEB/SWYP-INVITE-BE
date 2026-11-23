@@ -39,7 +39,9 @@ public class ChecklistItem {
 
 	private String content;
 
-	private boolean needsPurchase;
+	private String memo;
+
+	private String purchaseUrl;
 
 	@Column(name = "is_done")
 	private boolean done;
@@ -50,10 +52,11 @@ public class ChecklistItem {
 	@UpdateTimestamp
 	private LocalDateTime updatedAt;
 
-	public ChecklistItem(Event event, String content, boolean needsPurchase) {
+	public ChecklistItem(Event event, String content, String memo, String purchaseUrl) {
 		this.event = event;
 		this.content = content;
-		this.needsPurchase = needsPurchase;
+		this.memo = memo;
+		this.purchaseUrl = purchaseUrl;
 	}
 
 }
