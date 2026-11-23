@@ -6,6 +6,15 @@ Java 21, Spring Boot 4, MySQL 8.4, Swagger(springdoc)
 
 사전 준비: JDK 21, Docker
 
+처음 한 번, 개인정보 암호화 키를 넣은 `.env`를 만든다. 없으면 서버가 뜨지 않는다.
+
+```bash
+[ -f .env ] || echo "PII_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+```
+
+- `.env`는 git에 올라가지 않는다. 필요한 변수 이름은 `.env.example`에 있다.
+- 값은 `이름=값` 형식으로 적고 따옴표와 공백을 넣지 않는다.
+
 ```bash
 ./gradlew bootRun
 ```
@@ -24,6 +33,14 @@ docker compose --profile app up --build
 - 끝낼 때는 `Ctrl+C` 또는 `docker compose --profile app stop`. `down`은 MySQL 컨테이너까지 지워 로컬 DB 데이터가 사라진다.
 - `./gradlew bootRun`과 같은 8080 포트를 쓰므로 둘을 동시에 띄울 수 없다.
 
+### 로컬 DB 초기화
+
+테이블은 서버가 뜰 때 Flyway가 `src/main/resources/db/migration`의 SQL로 만든다. 출시 전에는 `V1__init.sql`을 고칠 수 있는데, 이미 적용한 로컬 DB에서는 내용이 바뀐 것을 알아채고 서버가 뜨지 않는다. 그때는 로컬 DB를 지우고 다시 띄운다. 로컬 데이터는 사라진다.
+
+```bash
+docker compose --profile app down
+```
+
 ## 빌드와 테스트
 
 ```bash
@@ -39,8 +56,12 @@ SPRING_PROFILES_ACTIVE=prod
 SPRING_DATASOURCE_URL=jdbc:mysql://<host>:3306/<db>
 SPRING_DATASOURCE_USERNAME=
 SPRING_DATASOURCE_PASSWORD=
+PII_ENCRYPTION_KEY=
 ```
+
+`PII_ENCRYPTION_KEY`는 32바이트를 Base64로 적은 값이다. 없으면 서버가 뜨지 않는다. 로컬에서 쓰던 값을 운영에 쓰지 않는다.
 
 ## 문서
 
 - [Git 컨벤션](docs/git-convention.md)
+- [코드 구조](docs/architecture.md)
