@@ -6,6 +6,15 @@ Java 21, Spring Boot 4, MySQL 8.4, Swagger(springdoc)
 
 사전 준비: JDK 21, Docker
 
+처음 한 번, 개인정보 암호화 키를 넣은 `.env`를 만든다. 없으면 서버가 뜨지 않는다.
+
+```bash
+[ -f .env ] || echo "PII_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+```
+
+- `.env`는 git에 올라가지 않는다. 필요한 변수 이름은 `.env.example`에 있다.
+- 값은 `이름=값` 형식으로 적고 따옴표와 공백을 넣지 않는다.
+
 ```bash
 ./gradlew bootRun
 ```
@@ -39,7 +48,10 @@ SPRING_PROFILES_ACTIVE=prod
 SPRING_DATASOURCE_URL=jdbc:mysql://<host>:3306/<db>
 SPRING_DATASOURCE_USERNAME=
 SPRING_DATASOURCE_PASSWORD=
+PII_ENCRYPTION_KEY=
 ```
+
+`PII_ENCRYPTION_KEY`는 32바이트를 Base64로 적은 값이다. 없으면 서버가 뜨지 않는다. 로컬에서 쓰던 값을 운영에 쓰지 않는다.
 
 ## 문서
 

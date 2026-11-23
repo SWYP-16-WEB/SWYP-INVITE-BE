@@ -3,6 +3,8 @@ spring:
     name: swyp-invite-be
   profiles:
     default: local # 배포 환경에서는 SPRING_PROFILES_ACTIVE=prod
+  config:
+    import: optional:file:.env[.properties]
   jpa:
     open-in-view: false
 ---
