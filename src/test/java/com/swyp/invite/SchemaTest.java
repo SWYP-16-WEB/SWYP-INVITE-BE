@@ -19,14 +19,14 @@ class SchemaTest {
 	EntityManager em;
 
 	@Test
-	void V1이_테이블_네_개를_만든다() {
+	void V1이_테이블_다섯_개를_만든다() {
 		List<?> tables = em.createNativeQuery("""
 				select table_name from information_schema.tables
 				where table_schema = database() and table_name <> 'flyway_schema_history'
 				order by table_name
 				""").getResultList();
 
-		assertThat(tables).hasToString("[checklist_items, events, rsvps, users]");
+		assertThat(tables).hasToString("[checklist_items, events, reminders, rsvps, users]");
 	}
 
 	@Test

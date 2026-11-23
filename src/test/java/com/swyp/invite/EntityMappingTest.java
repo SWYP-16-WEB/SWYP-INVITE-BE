@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.swyp.invite.checklist.entity.ChecklistItem;
 import com.swyp.invite.event.entity.Event;
 import com.swyp.invite.event.entity.EventType;
+import com.swyp.invite.reminder.entity.Reminder;
 import com.swyp.invite.rsvp.entity.Attendance;
 import com.swyp.invite.rsvp.entity.ReminderStatus;
 import com.swyp.invite.rsvp.entity.Rsvp;
@@ -76,11 +77,12 @@ class EntityMappingTest {
 	}
 
 	@Test
-	void 회원을_지우면_이벤트와_응답과_체크리스트가_함께_지워진다() {
+	void 회원을_지우면_이벤트와_응답과_체크리스트와_리마인드가_함께_지워진다() {
 		User user = persist(new User("kakao-1", "닉네임"));
 		Event event = persist(memberEvent(user, "share-1").build());
 		persist(new ChecklistItem(event, "케이크", true));
 		persist(new Rsvp(event, "게스트", Attendance.ATTENDING, "user1@example.com", ReminderStatus.PENDING));
+		persist(new Reminder(event, LocalDateTime.of(2026, 12, 24, 10, 0), "내일 만나요"));
 		em.flush();
 		em.clear();
 
@@ -90,6 +92,31 @@ class EntityMappingTest {
 		assertThat(count("events")).isZero();
 		assertThat(count("checklist_items")).isZero();
 		assertThat(count("rsvps")).isZero();
+		assertThat(count("reminders")).isZero();
+	}
+
+	@Test
+	void 리마인드를_저장하고_다시_읽으면_값이_같다() {
+		Event event = persist(lightEvent("share-1").build());
+		Reminder reminder = persist(new Reminder(event, LocalDateTime.of(2026, 12, 24, 10, 0), "내일 만나요"));
+		em.flush();
+		em.clear();
+
+		Reminder found = em.find(Reminder.class, reminder.getId());
+		assertThat(found.getEvent().getId()).isEqualTo(event.getId());
+		assertThat(found.getRemindAt()).isEqualTo(LocalDateTime.of(2026, 12, 24, 10, 0));
+		assertThat(found.getMessage()).isEqualTo("내일 만나요");
+	}
+
+	@Test
+	void 이벤트_하나에_리마인드는_하나만_저장된다() {
+		Event event = persist(lightEvent("share-1").build());
+		persist(new Reminder(event, LocalDateTime.of(2026, 12, 24, 10, 0), null));
+
+		assertThatThrownBy(() -> {
+			em.persist(new Reminder(event, LocalDateTime.of(2026, 12, 24, 18, 0), null));
+			em.flush();
+		}).isInstanceOf(PersistenceException.class).hasStackTraceContaining("uk_reminders_event_id");
 	}
 
 	@Test

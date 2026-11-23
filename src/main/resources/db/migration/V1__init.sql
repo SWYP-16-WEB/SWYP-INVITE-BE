@@ -19,8 +19,6 @@ CREATE TABLE events (
     place VARCHAR(50) NOT NULL,
     rsvp_deadline DATE NULL,
     photo_url VARCHAR(500) NULL,
-    reminder_at DATETIME NULL,
-    reminder_message VARCHAR(500) NULL,
     settlement_info VARCHAR(512) NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
@@ -53,4 +51,14 @@ CREATE TABLE rsvps (
     created_at DATETIME NOT NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_rsvps_event_id FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE reminders (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    event_id BIGINT NOT NULL,
+    remind_at DATETIME NOT NULL,
+    message VARCHAR(500) NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_reminders_event_id UNIQUE (event_id),
+    CONSTRAINT fk_reminders_event_id FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;

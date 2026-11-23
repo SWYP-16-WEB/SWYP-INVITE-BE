@@ -64,10 +64,6 @@ public class Event {
 
 	private String photoUrl;
 
-	private LocalDateTime reminderAt;
-
-	private String reminderMessage;
-
 	@Convert(converter = PiiEncryptionConverter.class)
 	private String settlementInfo;
 
