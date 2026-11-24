@@ -12,6 +12,7 @@ public enum ErrorCode {
 	KAKAO_AUTH_FAILED(401, "카카오 인증에 실패했습니다"),
 	HOST_CODE_INVALID(401, "관리 코드가 맞지 않습니다"),
 	FORBIDDEN(403, "본인이 만든 이벤트가 아닙니다"),
+	CSRF_TOKEN_INVALID(403, "CSRF 토큰이 없거나 맞지 않습니다"),
 	INVITATION_NOT_FOUND(404, "존재하지 않는 초대장입니다"),
 	EVENT_NOT_FOUND(404, "존재하지 않는 이벤트입니다"),
 	RSVP_CLOSED(409, "응답 기간이 끝났습니다"),

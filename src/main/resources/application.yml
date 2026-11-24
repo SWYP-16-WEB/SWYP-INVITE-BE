@@ -2,10 +2,22 @@ spring:
   application:
     name: swyp-invite-be
   profiles:
-    default: local # 배포 환경에서는 SPRING_PROFILES_ACTIVE=prod
+    default: local
   config:
     import: optional:file:.env[.properties]
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+
+server:
+  servlet:
+    session:
+      timeout: 14d
+      cookie:
+        max-age: 14d
+
+springdoc:
+  swagger-ui:
+    csrf:
+      enabled: true
