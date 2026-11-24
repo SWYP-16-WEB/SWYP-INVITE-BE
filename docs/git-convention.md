@@ -51,4 +51,4 @@
 - 1명 이상 승인 후 병합.
 - Squash merge로 병합해 `main`에는 PR당 커밋 하나만 남긴다.
 - 병합 메시지 제목은 `<type>: <제목> (#PR번호)`, 본문은 변경 요약 서너 줄로 정리한다.
-- 병합 전 `./gradlew build` 통과 필수.
+- 병합 전 `./gradlew build` 통과 필수. PR을 올리거나 고치면 GitHub Actions가 같은 명령을 자동으로 돌린다(`.github/workflows/build.yml`).
