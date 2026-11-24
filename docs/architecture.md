@@ -51,7 +51,9 @@ com.swyp.invite
 
 - 로그인 없이 부르는 API만 `global.security.SecurityConfig`의 공개 목록에 적는다. 적지 않은 경로는 로그인하지 않으면 401(`UNAUTHENTICATED`)이 된다. 기준은 `docs/backend.md` 05절 API 명세 표의 인증·권한 열이다.
 - 쿠키로 회원을 확인하면서 값을 바꾸는 요청(POST·PUT·PATCH·DELETE)은 CSRF 토큰이 있어야 한다. 없거나 틀리면 403(`CSRF_TOKEN_INVALID`)이 된다. 쿠키로 회원을 확인하지 않는 공개 API는 `SecurityConfig`의 `NO_COOKIE_APIS`에 적어 토큰 없이 받는다.
+- 로그인한 회원은 컨트롤러 파라미터 `@AuthenticationPrincipal LoginUser loginUser`로 받고, 회원 id는 `loginUser.userId()`로 꺼낸다. 로그인 없이도 되는 API에서 로그인하지 않은 요청이면 `loginUser`가 `null`이다.
 - 컨트롤러 테스트(`@WebMvcTest`)에는 `@Import(SecurityConfig.class)`를 붙인다. 붙이지 않으면 스프링의 기본 설정이 걸려 모든 요청이 401이 된다. 값을 바꾸는 요청에는 `.with(csrf())`를 붙인다.
+- 테스트에서 로그인한 요청은 `.with(loginAs(7L))`로 만든다(`LoginTestSupport`). 7은 회원 id다.
 
 ## DB 스키마
 
