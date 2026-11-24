@@ -49,6 +49,8 @@ docker compose --profile app down
 
 테스트는 Testcontainers로 MySQL을 띄우므로 Docker가 실행 중이어야 한다.
 
+코드 모양이 포매터와 다르면 빌드가 실패한다. `./gradlew spotlessApply`로 맞춘다.
+
 ## 배포 환경 변수
 
 ```
