@@ -11,4 +11,5 @@ Java 21, Spring Boot 4, MySQL, Gradle 프로젝트.
 ## 명령어
 
 - 빌드와 테스트: `./gradlew build` (Docker 필요)
+- 코드 모양 맞추기: `./gradlew spotlessApply`
 - 로컬 실행: `./gradlew bootRun` (MySQL 컨테이너 자동 기동)
