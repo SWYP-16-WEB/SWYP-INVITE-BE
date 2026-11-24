@@ -9,3 +9,15 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+
+server:
+  servlet:
+    session:
+      timeout: 14d
+      cookie:
+        max-age: 14d
+
+springdoc:
+  swagger-ui:
+    csrf:
+      enabled: true
