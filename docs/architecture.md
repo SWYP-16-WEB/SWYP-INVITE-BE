@@ -22,6 +22,11 @@ com.swyp.invite
 - `user`, `checklist`, `rsvp`, `reminder`도 `event`와 같은 하위 패키지를 쓴다. 하위 패키지는 필요할 때 만든다.
 - 여러 기능이 같이 쓰는 코드는 `global`에 둔다.
 - 호출은 controller → service → repository 방향으로만 한다.
+- 테스트 코드도 같은 구조를 따른다. 테스트는 대상 클래스와 같은 패키지에 두고, 여러 기능의 테스트가 같이 쓰는 코드는 `global`에 둔다.
+
+## 주석
+
+- 코드와 설정 파일에 주석을 달지 않는다. 테스트 코드도 같다.
 
 ## 엔티티
 
@@ -42,4 +47,4 @@ com.swyp.invite
 - 테이블은 `src/main/resources/db/migration`의 Flyway SQL로만 바꾼다. 엔티티는 서버가 뜰 때 검사만 받는다(`ddl-auto: validate`).
 - 컬럼의 기준은 `docs/backend.md` 04절의 테이블 표다. 표를 먼저 고치고 SQL과 엔티티를 맞춘다. 표의 컬럼 이름과 실제 컬럼이 다르면 `SchemaTest`가 실패한다.
 - 출시 전에는 `V1__init.sql`을 고친다. 고친 뒤에는 로컬 DB를 지우고 다시 띄운다(README의 「로컬 DB 초기화」).
-- 검사가 잡지 못하는 필수, 유니크, 길이, 연쇄 삭제는 `EntityMappingTest`처럼 실제 스키마를 상대로 테스트한다.
+- 검사가 잡지 못하는 필수, 유니크, 길이, 연쇄 삭제는 각 엔티티의 테스트(`EventTest` 등)처럼 `EntityTestSupport`를 상속해 실제 스키마를 상대로 테스트한다.
