@@ -52,3 +52,9 @@
 - Squash merge로 병합해 `main`에는 PR당 커밋 하나만 남긴다.
 - 병합 메시지 제목은 `<type>: <제목> (#PR번호)`, 본문은 변경 요약 서너 줄로 정리한다.
 - 병합 전 `./gradlew build` 통과 필수. PR을 올리거나 고치면 GitHub Actions가 같은 명령을 자동으로 돌린다(`.github/workflows/build.yml`).
+
+## backend.md 수정
+
+- `docs/backend.md`만 고치는 이슈·PR·커밋의 제목은 `docs: backend.md v0.NN`으로 하고, 무엇을 왜 고쳤는지는 본문에 적는다. 예: `docs: backend.md v0.22 (#27)`
+- 문서 PR은 한 번에 하나만 열고, 버전은 `main`의 다음 번호를 쓴다. 버전 줄과 변경 이력의 같은 자리를 고치므로 둘이 함께 열려 있으면 충돌한다.
+- 에러 코드 표와 테이블 표는 코드와 같은 PR에서 고친다. 문서만 먼저 고치면 `ErrorCodeTest`와 `SchemaTest`가 실패한다.
