@@ -56,6 +56,29 @@ class EventTimePolicyTest {
         assertThat(policy.evaluate(event(LocalDate.of(2027, 1, 10))).rsvpOpen()).isFalse();
     }
 
+    @ParameterizedTest
+    @CsvSource({
+        "2028-01-16T18:29:59.999999999, false",
+        "2028-01-16T18:30:00, true",
+        "2028-01-16T18:30:00.000000001, true"
+    })
+    void 행사_시작에서_1년이_되는_순간부터_보관_기간이_끝난다(LocalDateTime now, boolean retentionEnded) {
+        assertThat(policy(now).evaluate(event(null)).retentionEnded()).isEqualTo(retentionEnded);
+    }
+
+    @Test
+    void 윤년의_2월_29일은_다음_해_2월_말일의_같은_시각까지_보관한다() {
+        Event event =
+                Event.builder().eventAt(LocalDateTime.of(2028, 2, 29, 18, 30)).build();
+
+        assertThat(policy(LocalDateTime.of(2029, 2, 28, 18, 29, 59))
+                        .evaluate(event)
+                        .retentionEnded())
+                .isFalse();
+        assertThat(policy(LocalDateTime.of(2029, 2, 28, 18, 30)).evaluate(event).retentionEnded())
+                .isTrue();
+    }
+
     private EventTimePolicy policy(LocalDateTime now) {
         return new EventTimePolicy(Clock.fixed(now.toInstant(ZoneOffset.ofHours(9)), ZoneOffset.UTC));
     }
