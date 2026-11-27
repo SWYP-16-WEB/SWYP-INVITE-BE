@@ -21,8 +21,9 @@ public class EventTimePolicy {
         LocalDate closingDate = deadline == null || deadline.isAfter(eventDate) ? eventDate : deadline;
         boolean expired = !now.isBefore(event.getEventAt().plusHours(48));
         boolean rsvpOpen = !expired && !now.toLocalDate().isAfter(closingDate);
-        return new Status(expired, rsvpOpen);
+        boolean retentionEnded = !now.isBefore(event.getEventAt().plusYears(1));
+        return new Status(expired, rsvpOpen, retentionEnded);
     }
 
-    public record Status(boolean expired, boolean rsvpOpen) {}
+    public record Status(boolean expired, boolean rsvpOpen, boolean retentionEnded) {}
 }
