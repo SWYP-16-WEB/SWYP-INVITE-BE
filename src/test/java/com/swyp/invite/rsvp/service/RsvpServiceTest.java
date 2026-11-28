@@ -6,17 +6,18 @@ import static org.mockito.BDDMockito.given;
 
 import com.swyp.invite.event.entity.Event;
 import com.swyp.invite.global.EntityTestSupport;
+import com.swyp.invite.global.TimeConfig;
 import com.swyp.invite.global.error.ApiException;
 import com.swyp.invite.global.error.ErrorCode;
-import com.swyp.invite.rsvp.dto.RsvpCreateRequest;
+import com.swyp.invite.rsvp.dto.RsvpResponse;
+import com.swyp.invite.rsvp.dto.RsvpSummaryResponse;
 import com.swyp.invite.rsvp.entity.Attendance;
 import com.swyp.invite.rsvp.entity.ReminderStatus;
 import com.swyp.invite.rsvp.entity.Rsvp;
 import com.swyp.invite.user.entity.User;
 import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,106 +27,146 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class RsvpServiceTest extends EntityTestSupport {
 
+    private static final LocalDateTime EVENT_AT = LocalDateTime.of(2027, 1, 16, 18, 30);
+
     @Autowired
     private RsvpService service;
 
     @MockitoBean
     private Clock clock;
 
+    private User host;
+
+    private Event event;
+
     @BeforeEach
     void setUp() {
-        given(clock.instant()).willReturn(Instant.parse("2026-12-20T09:30:00Z"));
+        now("2027-01-17T12:00:00");
+        host = persist(new User("1001", "모임장"));
+        event = persist(memberEvent(host, "event123").eventAt(EVENT_AT).build());
     }
 
     @Test
-    void 같은_이름도_각각_저장하고_공유_코드의_이벤트에_연결한다() {
-        User host = persist(new User("1001", "모임장"));
-        Event member = persist(memberEvent(host, "member123").build());
-        Event light = persist(lightEvent("light123").build());
+    void 본인_이벤트의_응답만_최신순으로_주고_같은_시각이면_ID가_큰_순서로_준다() {
+        Rsvp first = response(event, "같은 이름", Attendance.ATTENDING, "first@example.com");
+        Rsvp second = response(event, "같은 이름", Attendance.ATTENDING, "second@example.com");
+        Rsvp latest = response(event, "최근 응답", Attendance.DECLINED, "latest@example.com");
+        Rsvp oldest = response(event, "오래된 응답", Attendance.ATTENDING, null);
+        Event other = persist(memberEvent(host, "other123").eventAt(EVENT_AT).build());
+        response(other, "다른 이벤트", Attendance.ATTENDING, "other@example.com");
+        em.flush();
+        respondedAt(first, "2027-01-17T01:00:00");
+        respondedAt(second, "2027-01-17T01:00:00");
+        respondedAt(latest, "2027-01-17T02:00:00");
+        respondedAt(oldest, "2027-01-16T01:00:00");
+        em.clear();
 
-        service.createRsvp("member123", new RsvpCreateRequest("하늘", Attendance.ATTENDING, "sky@example.com"));
-        service.createRsvp("member123", new RsvpCreateRequest("하늘", Attendance.DECLINED, null));
-        service.createRsvp("light123", new RsvpCreateRequest("하늘", Attendance.ATTENDING, null));
+        RsvpSummaryResponse summary = service.getRsvps(event.getId(), host.getId());
+
+        assertThat(summary.attendingCount()).isEqualTo(3);
+        assertThat(summary.declinedCount()).isEqualTo(1);
+        assertThat(summary.rsvps())
+                .extracting(RsvpResponse::email)
+                .containsExactly("latest@example.com", "second@example.com", "first@example.com", null);
+        assertThat(summary.rsvps().getFirst().respondedAt().toLocalDateTime())
+                .isEqualTo(LocalDateTime.of(2027, 1, 17, 2, 0));
+        assertThat(summary.rsvps().getFirst().respondedAt().getOffset()).isEqualTo(ZoneOffset.ofHours(9));
+    }
+
+    @Test
+    void 응답이_없으면_인원은_0이고_목록은_빈_배열이다() {
         em.flush();
         em.clear();
 
-        var responses =
-                em.createQuery("select r from Rsvp r order by r.id", Rsvp.class).getResultList();
-        assertThat(responses).hasSize(3);
-        assertThat(responses)
-                .extracting(r -> r.getEvent().getId())
-                .containsExactly(member.getId(), member.getId(), light.getId());
-        assertThat(responses)
-                .extracting(Rsvp::getAttendance)
-                .containsExactly(Attendance.ATTENDING, Attendance.DECLINED, Attendance.ATTENDING);
-        assertThat(responses).allSatisfy(r -> {
-            assertThat(r.getName()).isEqualTo("하늘");
-            assertThat(r.getCreatedAt()).isNotNull();
-        });
-        assertThat(responses.get(0).getEmail()).isEqualTo("sky@example.com");
-        assertThat(responses.get(0).getReminderStatus()).isEqualTo(ReminderStatus.PENDING);
-        assertThat(raw("select email from rsvps where id = ?", responses.get(0).getId()))
-                .isNotNull()
-                .isNotEqualTo("sky@example.com");
-        assertThat(responses.get(1).getEmail()).isNull();
-        assertThat(responses.get(1).getReminderStatus()).isNull();
-    }
+        RsvpSummaryResponse summary = service.getRsvps(event.getId(), host.getId());
 
-    @Test
-    void 불참이어도_입력한_이메일과_대기_상태를_보관한다() {
-        persist(lightEvent("abc123").build());
-
-        service.createRsvp("abc123", new RsvpCreateRequest("하늘", Attendance.DECLINED, "sky@example.com"));
-        em.flush();
-        em.clear();
-
-        Rsvp response = em.createQuery("select r from Rsvp r", Rsvp.class).getSingleResult();
-        assertThat(response.getAttendance()).isEqualTo(Attendance.DECLINED);
-        assertThat(response.getEmail()).isEqualTo("sky@example.com");
-        assertThat(response.getReminderStatus()).isEqualTo(ReminderStatus.PENDING);
-    }
-
-    @Test
-    void 없는_초대장은_저장하지_않는다() {
-        assertThatThrownBy(() -> service.createRsvp("missing", request()))
-                .isInstanceOfSatisfying(
-                        ApiException.class,
-                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVITATION_NOT_FOUND));
-        assertThat(count("rsvps")).isZero();
+        assertThat(summary.attendingCount()).isZero();
+        assertThat(summary.declinedCount()).isZero();
+        assertThat(summary.rsvps()).isEmpty();
     }
 
     @ParameterizedTest
-    @CsvSource({
-        "2027-01-10, 2027-01-10T14:59:59.999999Z, true",
-        "2027-01-10, 2027-01-10T15:00:00Z, false",
-        ", 2027-01-16T14:59:59.999999Z, true",
-        ", 2027-01-16T15:00:00Z, false",
-        "2027-01-20, 2027-01-16T14:59:59.999999Z, true",
-        "2027-01-20, 2027-01-16T15:00:00Z, false",
-        ", 2027-01-18T09:29:59.999999Z, false",
-        ", 2027-01-18T09:30:00Z, false"
-    })
-    void 마감_및_만료_경계에_맞춰_저장_여부를_결정한다(LocalDate deadline, Instant now, boolean open) {
-        persist(lightEvent("abc123")
-                .eventAt(LocalDateTime.of(2027, 1, 16, 18, 30))
-                .rsvpDeadline(deadline)
-                .build());
-        given(clock.instant()).willReturn(now);
+    @CsvSource({"2027-01-18T18:29:59, false", "2027-01-18T18:30:00, true", "2027-01-18T18:30:01, true"})
+    void 만료_정리_전이라도_48시간부터_이메일을_숨기고_인원과_응답은_유지한다(String now, boolean hidden) {
+        Rsvp rsvp = response(event, "응답자", Attendance.ATTENDING, "guest@example.com");
+        em.flush();
+        em.clear();
+        now(now);
 
-        if (open) {
-            service.createRsvp("abc123", request());
-            em.flush();
-            assertThat(count("rsvps")).isEqualTo(1);
-        } else {
-            assertThatThrownBy(() -> service.createRsvp("abc123", request()))
-                    .isInstanceOfSatisfying(
-                            ApiException.class,
-                            e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.RSVP_CLOSED));
-            assertThat(count("rsvps")).isZero();
-        }
+        RsvpSummaryResponse summary = service.getRsvps(event.getId(), host.getId());
+
+        assertThat(summary.attendingCount()).isEqualTo(1);
+        assertThat(summary.declinedCount()).isZero();
+        assertThat(summary.rsvps().getFirst().name()).isEqualTo("응답자");
+        assertThat(summary.rsvps().getFirst().email()).isEqualTo(hidden ? null : "guest@example.com");
+        assertThat(raw("select email from rsvps where id = ?", rsvp.getId()))
+                .isNotNull()
+                .isNotEqualTo("guest@example.com");
     }
 
-    private RsvpCreateRequest request() {
-        return new RsvpCreateRequest("하늘", Attendance.ATTENDING, null);
+    @ParameterizedTest
+    @CsvSource({"2028-01-16T18:29:59, false", "2028-01-16T18:30:00, true", "2028-01-16T18:30:01, true"})
+    void 삭제_작업_전이라도_행사_시작_후_1년부터_조회할_수_없다(String now, boolean unavailable) {
+        response(event, "응답자", Attendance.ATTENDING, "guest@example.com");
+        em.flush();
+        em.clear();
+        now(now);
+
+        if (unavailable) {
+            assertThatThrownBy(() -> service.getRsvps(event.getId(), host.getId()))
+                    .isInstanceOfSatisfying(
+                            ApiException.class,
+                            e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.EVENT_NOT_FOUND));
+        } else {
+            RsvpSummaryResponse summary = service.getRsvps(event.getId(), host.getId());
+            assertThat(summary.rsvps()).hasSize(1);
+            assertThat(summary.rsvps().getFirst().email()).isNull();
+        }
+        assertThat(count("events")).isEqualTo(1);
+    }
+
+    @Test
+    void 다른_회원은_조회할_수_없다() {
+        User other = persist(new User("1002", "다른 회원"));
+        em.flush();
+        em.clear();
+
+        assertThatThrownBy(() -> service.getRsvps(event.getId(), other.getId()))
+                .isInstanceOfSatisfying(
+                        ApiException.class, e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
+    }
+
+    @Test
+    void 비회원_호스트의_이벤트는_회원_API로_조회할_수_없다() {
+        Event light = persist(lightEvent("light123").eventAt(EVENT_AT).build());
+        em.flush();
+        em.clear();
+
+        assertThatThrownBy(() -> service.getRsvps(light.getId(), host.getId()))
+                .isInstanceOfSatisfying(
+                        ApiException.class, e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
+    }
+
+    @Test
+    void 없는_이벤트는_EVENT_NOT_FOUND다() {
+        assertThatThrownBy(() -> service.getRsvps(999_999L, host.getId()))
+                .isInstanceOfSatisfying(
+                        ApiException.class, e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.EVENT_NOT_FOUND));
+    }
+
+    private void now(String value) {
+        given(clock.instant())
+                .willReturn(LocalDateTime.parse(value).atZone(TimeConfig.KST).toInstant());
+    }
+
+    private Rsvp response(Event event, String name, Attendance attendance, String email) {
+        return persist(new Rsvp(event, name, attendance, email, email == null ? null : ReminderStatus.PENDING));
+    }
+
+    private void respondedAt(Rsvp rsvp, String value) {
+        em.createNativeQuery("update rsvps set created_at = ?1 where id = ?2")
+                .setParameter(1, LocalDateTime.parse(value))
+                .setParameter(2, rsvp.getId())
+                .executeUpdate();
     }
 }
