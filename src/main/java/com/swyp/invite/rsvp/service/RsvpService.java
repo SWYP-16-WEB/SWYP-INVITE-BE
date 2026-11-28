@@ -5,9 +5,11 @@ import com.swyp.invite.event.repository.EventRepository;
 import com.swyp.invite.event.service.EventTimePolicy;
 import com.swyp.invite.global.error.ApiException;
 import com.swyp.invite.global.error.ErrorCode;
+import com.swyp.invite.rsvp.dto.RsvpCreateRequest;
 import com.swyp.invite.rsvp.dto.RsvpResponse;
 import com.swyp.invite.rsvp.dto.RsvpSummaryResponse;
 import com.swyp.invite.rsvp.entity.Attendance;
+import com.swyp.invite.rsvp.entity.ReminderStatus;
 import com.swyp.invite.rsvp.entity.Rsvp;
 import com.swyp.invite.rsvp.repository.RsvpRepository;
 import java.util.List;
@@ -22,6 +24,19 @@ public class RsvpService {
     private final EventRepository eventRepository;
     private final RsvpRepository rsvpRepository;
     private final EventTimePolicy eventTimePolicy;
+
+    @Transactional
+    public void createRsvp(String shareCode, RsvpCreateRequest request) {
+        Event event = eventRepository
+                .findByShareCode(shareCode)
+                .orElseThrow(() -> new ApiException(ErrorCode.INVITATION_NOT_FOUND));
+        if (!eventTimePolicy.evaluate(event).rsvpOpen()) {
+            throw new ApiException(ErrorCode.RSVP_CLOSED);
+        }
+
+        ReminderStatus reminderStatus = request.email() == null ? null : ReminderStatus.PENDING;
+        rsvpRepository.save(new Rsvp(event, request.name(), request.attendance(), request.email(), reminderStatus));
+    }
 
     @Transactional(readOnly = true)
     public RsvpSummaryResponse getRsvps(Long eventId, Long userId) {
